@@ -1,62 +1,86 @@
-import { sourceData } from '../app/interfaces';
+import { IsourceData } from '../app/interfaces';
 
-interface apiSourceItem {
-    sources: string;
+enum endpoint {
+  'sources',
+  'everything',
+  'top-headlines',
 }
 
-interface options {
-    sources?: string;
+interface IapiKeyObj {
+  apiKey: string;
 }
 
-type callBack<Type> = (arg: Type) => void;
-type errorCallBack = () => void;
+interface IgetRespObj {
+  endpoint: keyof typeof endpoint;
+  options?: Partial<IapiSourceItem>;
+}
+
+interface IapiSourceItem {
+  sources: string;
+}
+
+interface Ioptions {
+  sources?: string;
+}
+
+interface IcallBack<Type> {
+  (arg: Type): void;
+}
+
+interface IerrorCallBack {
+  (): void;
+}
 
 class Loader {
-    baseLink;
-    options;
+  private baseLink;
+  public readonly options;
 
-    constructor(baseLink: string, options: { apiKey: string }) {
-        this.baseLink = baseLink;
-        this.options = options;
+  constructor(baseLink: string, options: IapiKeyObj) {
+    this.baseLink = baseLink;
+    this.options = options;
+  }
+
+  public getResp(
+    { endpoint, options = {} }: IgetRespObj,
+    callback: IerrorCallBack = () => {
+      console.error('No callback for GET response');
+    },
+  ): void {
+    this.load('GET', endpoint, callback, options);
+  }
+
+  public errorHandler(res: Response): Response {
+    if (!res.ok) {
+      if (res.status === 401 || res.status === 404)
+        console.log(
+          `Sorry, but there is ${res.status} error: ${res.statusText}`,
+        );
+      throw Error(res.statusText);
     }
 
-    getResp(
-        { endpoint, options = {} }: { endpoint: string; options?: Partial<apiSourceItem> },
-        callback: errorCallBack = () => {
-            console.error('No callback for GET response');
-        }
-    ) {
-        this.load('GET', endpoint, callback, options);
-    }
+    return res;
+  }
 
-    errorHandler(res: Response) {
-        if (!res.ok) {
-            if (res.status === 401 || res.status === 404)
-                console.log(`Sorry, but there is ${res.status} error: ${res.statusText}`);
-            throw Error(res.statusText);
-        }
+  public makeUrl(options: Ioptions, endpoint: string): string {
+    const urlOptions = { ...this.options, ...options };
+    const queryParams = Object.entries(urlOptions)
+      .map(([key, value]) => `${key}=${value}`)
+      .join('&');
+    return `${this.baseLink}${endpoint}?${queryParams}`;
+  }
 
-        return res;
-    }
-
-    makeUrl(options: options, endpoint: string) {
-        const urlOptions = { ...this.options, ...options };
-        let url = `${this.baseLink}${endpoint}?`;
-
-        Object.keys(urlOptions).forEach((key) => {
-            url += `${key}=${urlOptions[key as keyof typeof urlOptions]}&`;
-        });
-
-        return url.slice(0, -1);
-    }
-
-    load(method: string, endpoint: string, callback: callBack<sourceData>, options = {}): void {
-        fetch(this.makeUrl(options, endpoint), { method })
-            .then(this.errorHandler)
-            .then((res) => res.json())
-            .then((data) => callback(data))
-            .catch((err) => console.error(err));
-    }
+  public load(
+    method: string,
+    endpoint: string,
+    callback: IcallBack<IsourceData>,
+    options = {},
+  ): void {
+    fetch(this.makeUrl(options, endpoint), { method })
+      .then(this.errorHandler)
+      .then((res) => res.json())
+      .then((data) => callback(data))
+      .catch((err) => console.error(err));
+  }
 }
 
 export default Loader;

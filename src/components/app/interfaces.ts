@@ -1,26 +1,26 @@
-export interface articleData {
-    status: string;
-    totalResults: number;
-    articles: articleItem[];
+export interface IarticleData {
+  status: string;
+  totalResults: number;
+  articles: IarticleItem[];
 }
 
-export interface sourceData {
-    status: string;
-    sources: sourceItem[];
+export interface IsourceData {
+  status: string;
+  sources: IsourceItem[];
 }
 
-export interface sourceItem {
-    id: string;
-    name: string;
+export interface IsourceItem {
+  id: string;
+  name: string;
 }
 
-export interface articleItem {
-    source: sourceItem;
-    author: string;
-    title: string;
-    description: string;
-    url: string;
-    urlToImage: string;
-    publishedAt: string;
-    content: string;
+export interface IarticleItem {
+  source: IsourceItem;
+  author: string;
+  title: string;
+  description: string;
+  url: string;
+  urlToImage: string;
+  publishedAt: string;
+  content: string;
 }
